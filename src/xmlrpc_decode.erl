@@ -145,6 +145,8 @@ decode(Date) when Date#xmlElement.name == 'dateTime.iso8601' ->
 decode(Base64) when Base64#xmlElement.name == base64 ->
     TextValue = get_text_value(Base64#xmlElement.content),
     {base64, ensure_base64(TextValue)};
+decode(Nil) when Nil#xmlElement.name == nil ->
+    undefined;
 decode(Value) -> throw({error, {bad_value, Value}}).
 
 get_value(Content) ->
