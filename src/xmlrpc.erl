@@ -171,6 +171,7 @@ parse_response(Socket, Timeout) ->
     setopts(Socket, [{packet, line}]),
     case recv(Socket, 0, Timeout) of
 	{ok, "HTTP/1.1 200 OK\r\n"} -> parse_header(Socket, Timeout);
+	{ok, "HTTP/1.0 200 OK\r\n"} -> parse_header(Socket, Timeout);
 	{ok, StatusLine} -> {error, StatusLine};
 	{error, Reason} -> {error, Reason}
     end.
@@ -183,8 +184,8 @@ parse_header(Socket, Timeout, Header) ->
 	    {error, missing_content_length};
 	{ok, "\r\n"} -> {ok, Header};
 	{ok, HeaderField} ->
-	    case string:tokens(HeaderField, " \r\n") of
-		["Content-Length:", ContentLength] ->
+        case string:tokens(string:to_lower(HeaderField), " \r\n") of
+		["content-length:", ContentLength] ->
 		    case catch list_to_integer(ContentLength) of
 			Value when is_integer(Value) ->
 			    parse_header(Socket, Timeout,
@@ -192,7 +193,7 @@ parse_header(Socket, Timeout, Header) ->
 						       Value});
 			_ -> {error, {invalid_content_length, ContentLength}}
 		    end;
-		["Connection:", "close"] ->
+		["connection:", "close"] ->
 		    parse_header(Socket, Timeout,
 				 Header#header{connection = close});
 		_ ->
